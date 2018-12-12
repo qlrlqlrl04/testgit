@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 이 파일의 경로를 config.xml에 명시해야 한다. -->
+
+<!-- 이 XML의 구조대로 구현될 클래스의 이름 -->
+<mapper namespace="DepartmentMapper">
+	
+	<!-- Beans 클래스의 객체이름(id)과 클래스이름(type)을 명시한다. -->
+	<resultMap id="department" type="study.spring.hellospring.model.Department">
+		<!-- Beans의 멤버변수(property)이름과 대상 테이블의 컬럼(column)을 연결한다. -->
+		<result property="deptno"	column="deptno"/>
+		<result property="dname"	column="dname"/>
+		<result property="loc"		column="loc"/>
+	</resultMap>
+	
+	<select id="selectDepartmentJoinList" parameterType="study.spring.hellospring.model.Department" resultMap="department">
+		SELECT deptno, dname, loc FROM department
+	</select>
+	
+	<!-- 학과 목록 조회하기 -->
+	<select id="selectDepartmentList" parameterType="study.spring.hellospring.model.Department" resultMap="department">
+		SELECT * FROM (
+			SELECT ROWNUM AS RNUM, tbl.* FROM (
+				SELECT deptno, dname, loc FROM department
+				
+				<where>
+					<if test="dname != null and dname != ''">
+						dname LIKE '%' || #{dname} || '%'
+					</if>
+				</where>
+				
+				ORDER   BY deptno ASC
+			) tbl WHERE ROWNUM &lt;=#{listCount}+#{limitStart}
+		) WHERE RNUM &gt; #{limitStart}
+	</select>
+	
+	<!-- 
+		단일행 조회(상세보기)를 취한 기능 정의
+		<select id="메서드이름" parameterType="파라미터의 데이터 타입" resultMap="리턴될 Beans의 id">
+	-->
+	<select id="selectDepartmentItem" parameterType="study.spring.hellospring.model.Department" resultMap="department">
+		<!-- "#{변수명}" 으로 표시된 곳에 파라미터로 전달된 Beans의 멤버변수값이 치환된다. -->
+		SELECT deptno, dname, loc
+		FROM department
+		WHERE deptno=#{deptno}
+	</select>
+	
+	<!-- 
+		데이터 저장을 위한 기능 정의
+		<insert id="메서드이름" parameterType="파라미터의 데이터 타입">
+	 -->
+	<insert id="insertDepartmentItem" parameterType="study.spring.hellospring.model.Department">
+		<!-- 데이터 조회 전, 시퀀스를 미리 조회하여 파라미터로 전달되는 Beans의 deptno에 미리 저장한다. -->
+		<selectKey keyProperty="deptno" resultType="int" order="BEFORE">
+			SELECT seq_student.NEXTVAL FROM dual
+		</selectKey>
+		INSERT INTO department(deptno, dname, loc)
+		VALUES(#{deptno}, #{dname}, #{loc})
+	</insert>
+	
+	<!-- 
+		데이터 수정을 위한 기능 정의
+		<update id="메서드이름" parameterType="파라미터의 데이터 타입">
+	 -->
+	<update id="updateDepartmentItem" parameterType="study.spring.hellospring.model.Department">
+		<!-- "#{변수명}"으로 표시된 곳에 파라미터로 전달된 Beans의 멤버변수값이 치환된다. -->
+		UPDATE department
+		SET deptno=#{deptno}, dname=#{dname}, loc=#{loc}
+		WHERE deptno=#{deptno}
+	</update>
+	
+	<!-- 
+		데이터 삭제를 위한 기능 정의
+		<delete id="메서드이름" parameterType="파라미터의 데이터 타입">
+	 -->
+	<delete id="deleteDepartmentItem" parameterType="study.spring.hellospring.model.Department">
+		<!-- "#{변수명}"으로 표시된 곳에 파라미터로 전달된 Beans의 멤버변수값이 치환된다. -->
+		DELETE FROM department WHERE deptno=#{deptno}
+	</delete>
+	
+	<!-- 전체 데이터 수 얻기 -->
+	<select id="selectDepartmentCount"
+		parameterType="study.spring.hellospring.model.Department"
+		resultType="int">
+		SELECT count(deptno)
+		FROM department
+		<where>
+			<if test="dname != null and dname != ''">
+				dname LIKE '%', || #{dname} || '%'
+			</if>
+		</where>
+	</select>
+</mapper>
